@@ -1,7 +1,5 @@
-import { PrismaClient } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 async function createSystem(formData: FormData) {
   "use server";
