@@ -8,6 +8,12 @@ type PdfParseClassCtor = new (options: {
   destroy?: () => Promise<void>;
 };
 
+interface PdfParseModule {
+  PDFParse: PdfParseClassCtor & {
+    setWorker?: (workerSrc?: string) => string;
+  };
+}
+
 async function extractWithPdfParseClass(PDFParse: PdfParseClassCtor, buffer: Buffer) {
   const parser = new PDFParse({ data: buffer });
 
@@ -37,6 +43,8 @@ export async function extractPdfText(buffer: Buffer) {
     }
   }
 
+  const workerPath = require.resolve("pdfjs-dist/legacy/build/pdf.worker.mjs");
+
   let text = "";
   if (
     typeof pdfParseModule === "object" &&
@@ -44,10 +52,9 @@ export async function extractPdfText(buffer: Buffer) {
     "PDFParse" in pdfParseModule &&
     typeof (pdfParseModule as { PDFParse: unknown }).PDFParse === "function"
   ) {
-    text = await extractWithPdfParseClass(
-      (pdfParseModule as { PDFParse: PdfParseClassCtor }).PDFParse,
-      buffer,
-    );
+    const { PDFParse } = pdfParseModule as PdfParseModule;
+    PDFParse.setWorker?.(workerPath);
+    text = await extractWithPdfParseClass(PDFParse, buffer);
   } else {
     throw new Error("Unsupported pdf-parse module shape (expected pdf-parse v2 PDFParse export).");
   }
