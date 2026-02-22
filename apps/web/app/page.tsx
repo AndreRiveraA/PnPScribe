@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { RulesAskPanel } from "@/app/rules-ask-panel";
 
 async function createSystem(formData: FormData) {
   "use server";
@@ -130,6 +131,15 @@ export default async function Home() {
             </ul>
           )}
         </section>
+
+        {!dbError && systems.length > 0 ? (
+          <RulesAskPanel
+            systems={systems.map((system) => ({
+              id: system.id,
+              name: system.name,
+            }))}
+          />
+        ) : null}
       </div>
     </main>
   );

@@ -27,6 +27,11 @@ export async function listDocumentsForSystem(systemId: string) {
           extractionStatus: true,
           extractionError: true,
           extractedAt: true,
+          _count: {
+            select: {
+              chunks: true,
+            },
+          },
           createdAt: true,
         },
       },

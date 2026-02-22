@@ -5,6 +5,8 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { prisma } from "@/lib/prisma";
+import { replaceChunksForDocument } from "@/lib/server/chunks";
+import { embedMissingChunksForDocument } from "@/lib/server/embeddings";
 import { HttpError } from "@/lib/server/http-error";
 import { extractPdfText } from "@/lib/server/pdf-text";
 
@@ -91,6 +93,9 @@ export async function uploadDocumentFromFormData(formData: FormData) {
   let extractionStatus = document.extractionStatus;
   let extractionError = document.extractionError;
   let extractedAt = document.extractedAt;
+  let chunkCount = 0;
+  let embeddedCount = 0;
+  let embeddingError: string | null = null;
 
   try {
     const extractedText = await extractPdfText(buffer);
@@ -117,6 +122,19 @@ export async function uploadDocumentFromFormData(formData: FormData) {
     extractionStatus = updated.extractionStatus;
     extractionError = updated.extractionError;
     extractedAt = updated.extractedAt;
+
+    const chunkResult = await replaceChunksForDocument(document.id, extractedText);
+    chunkCount = chunkResult.chunkCount;
+
+    if (chunkCount > 0) {
+      try {
+        const embeddingResult = await embedMissingChunksForDocument(document.id);
+        embeddedCount = embeddingResult.embeddedCount;
+      } catch (error) {
+        embeddingError =
+          error instanceof Error ? error.message.slice(0, 500) : "Embedding failed.";
+      }
+    }
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "PDF text extraction failed.";
@@ -146,6 +164,11 @@ export async function uploadDocumentFromFormData(formData: FormData) {
       extractionStatus,
       extractionError,
       extractedAt,
+    },
+    processing: {
+      chunkCount,
+      embeddedCount,
+      embeddingError,
     },
     file: {
       originalName: file.name,

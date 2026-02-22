@@ -1,0 +1,2 @@
+ALTER TABLE "Chunk"
+ALTER COLUMN "embedding" DROP NOT NULL;

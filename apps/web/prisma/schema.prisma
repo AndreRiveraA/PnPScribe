@@ -27,10 +27,13 @@ model Document {
 }
 
 model Chunk {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   content    String
-  embedding  Unsupported("vector")
+  chunkIndex Int
+  pageNumber Int?
+  chapterHint String?
+  embedding  Unsupported("vector")?
   documentId String
-  document   Document @relation(fields: [documentId], references: [id])
-  createdAt  DateTime @default(now())
+  document   Document  @relation(fields: [documentId], references: [id])
+  createdAt  DateTime  @default(now())
 }

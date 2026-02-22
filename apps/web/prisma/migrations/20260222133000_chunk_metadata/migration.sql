@@ -1,0 +1,4 @@
+ALTER TABLE "Chunk"
+ADD COLUMN "chunkIndex" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN "pageNumber" INTEGER,
+ADD COLUMN "chapterHint" TEXT;
