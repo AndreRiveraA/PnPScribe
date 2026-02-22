@@ -8,6 +8,11 @@ import { prisma } from "@/lib/prisma";
 import { replaceChunksForDocument } from "@/lib/server/chunks";
 import { embedMissingChunksForDocument } from "@/lib/server/embeddings";
 import { HttpError } from "@/lib/server/http-error";
+import {
+  assessOcrFallbackNeed,
+  clearDocumentOcrNeed,
+  markDocumentOcrNeeded,
+} from "@/lib/server/ocr-fallback";
 import { extractPdfText } from "@/lib/server/pdf-text";
 
 function sanitizeFilename(name: string) {
@@ -82,6 +87,14 @@ export async function uploadDocumentFromFormData(formData: FormData) {
     select: {
       id: true,
       filePath: true,
+      extractedTextLength: true,
+      extractedPageCount: true,
+      extractionDurationMs: true,
+      ocrStatus: true,
+      ocrReason: true,
+      ocrError: true,
+      ocrRequestedAt: true,
+      ocrCompletedAt: true,
       extractionStatus: true,
       extractionError: true,
       extractedAt: true,
@@ -93,12 +106,21 @@ export async function uploadDocumentFromFormData(formData: FormData) {
   let extractionStatus = document.extractionStatus;
   let extractionError = document.extractionError;
   let extractedAt = document.extractedAt;
+  let extractedTextLength = document.extractedTextLength;
+  let extractedPageCount = document.extractedPageCount;
+  let extractionDurationMs = document.extractionDurationMs;
+  let ocrStatus = document.ocrStatus;
+  let ocrReason = document.ocrReason;
+  let ocrError = document.ocrError;
+  let ocrRequestedAt = document.ocrRequestedAt;
+  let ocrCompletedAt = document.ocrCompletedAt;
   let chunkCount = 0;
   let embeddedCount = 0;
   let embeddingError: string | null = null;
 
   try {
-    const extractedText = await extractPdfText(absolutePath);
+    const extraction = await extractPdfText(absolutePath);
+    const extractedText = extraction.text;
 
     if (!extractedText) {
       throw new Error("No extractable digital text found in PDF.");
@@ -108,11 +130,17 @@ export async function uploadDocumentFromFormData(formData: FormData) {
       where: { id: document.id },
       data: {
         extractedText,
+        extractedTextLength: extractedText.length,
+        extractedPageCount: extraction.pageCount,
+        extractionDurationMs: extraction.durationMs,
         extractionStatus: "succeeded",
         extractionError: null,
         extractedAt: new Date(),
       },
       select: {
+        extractedTextLength: true,
+        extractedPageCount: true,
+        extractionDurationMs: true,
         extractionStatus: true,
         extractionError: true,
         extractedAt: true,
@@ -122,6 +150,25 @@ export async function uploadDocumentFromFormData(formData: FormData) {
     extractionStatus = updated.extractionStatus;
     extractionError = updated.extractionError;
     extractedAt = updated.extractedAt;
+    extractedTextLength = updated.extractedTextLength;
+    extractedPageCount = updated.extractedPageCount;
+    extractionDurationMs = updated.extractionDurationMs;
+
+    const ocrAssessment = assessOcrFallbackNeed({
+      extractionStatus: "succeeded",
+      text: extractedText,
+      pageCount: extraction.pageCount,
+    });
+
+    const ocrUpdated = ocrAssessment.needed
+      ? await markDocumentOcrNeeded(document.id, ocrAssessment.reason ?? "ocr_recommended")
+      : await clearDocumentOcrNeed(document.id);
+
+    ocrStatus = ocrUpdated.ocrStatus;
+    ocrReason = ocrUpdated.ocrReason;
+    ocrError = ocrUpdated.ocrError;
+    ocrRequestedAt = ocrUpdated.ocrRequestedAt;
+    ocrCompletedAt = ocrUpdated.ocrCompletedAt;
 
     const chunkResult = await replaceChunksForDocument(document.id, extractedText);
     chunkCount = chunkResult.chunkCount;
@@ -144,9 +191,23 @@ export async function uploadDocumentFromFormData(formData: FormData) {
       data: {
         extractionStatus: "failed",
         extractionError: message.slice(0, 500),
+        extractionDurationMs: null,
+        ocrStatus: "needed",
+        ocrReason: "digital_extraction_failed",
+        ocrError: null,
+        ocrRequestedAt: null,
+        ocrCompletedAt: null,
         extractedAt: null,
       },
       select: {
+        extractedTextLength: true,
+        extractedPageCount: true,
+        extractionDurationMs: true,
+        ocrStatus: true,
+        ocrReason: true,
+        ocrError: true,
+        ocrRequestedAt: true,
+        ocrCompletedAt: true,
         extractionStatus: true,
         extractionError: true,
         extractedAt: true,
@@ -156,11 +217,27 @@ export async function uploadDocumentFromFormData(formData: FormData) {
     extractionStatus = updated.extractionStatus;
     extractionError = updated.extractionError;
     extractedAt = updated.extractedAt;
+    extractedTextLength = updated.extractedTextLength;
+    extractedPageCount = updated.extractedPageCount;
+    extractionDurationMs = updated.extractionDurationMs;
+    ocrStatus = updated.ocrStatus;
+    ocrReason = updated.ocrReason;
+    ocrError = updated.ocrError;
+    ocrRequestedAt = updated.ocrRequestedAt;
+    ocrCompletedAt = updated.ocrCompletedAt;
   }
 
   return {
     document: {
       ...document,
+      extractedTextLength,
+      extractedPageCount,
+      extractionDurationMs,
+      ocrStatus,
+      ocrReason,
+      ocrError,
+      ocrRequestedAt,
+      ocrCompletedAt,
       extractionStatus,
       extractionError,
       extractedAt,

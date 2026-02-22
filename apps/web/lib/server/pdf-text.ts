@@ -5,11 +5,18 @@ import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 
-export async function extractPdfText(filePath: string) {
+export interface PdfExtractionResult {
+  text: string;
+  pageCount: number | null;
+  durationMs: number;
+}
+
+export async function extractPdfText(filePath: string): Promise<PdfExtractionResult> {
   const scriptPath = path.resolve(process.cwd(), "scripts", "extract-pdf-text.mjs");
 
   let stdout = "";
   let stderr = "";
+  const startedAt = Date.now();
 
   try {
     const result = await execFileAsync(process.execPath, [scriptPath, filePath], {
@@ -23,6 +30,7 @@ export async function extractPdfText(filePath: string) {
       error instanceof Error ? error.message : "PDF text extraction child process failed.";
     throw new Error(message);
   }
+  const durationMs = Date.now() - startedAt;
 
   if (!stdout) {
     throw new Error(stderr || "PDF text extraction produced no output.");
@@ -43,5 +51,18 @@ export async function extractPdfText(filePath: string) {
       ? (parsed as { text: string }).text
       : "";
 
-  return text.replace(/\u0000/g, "").trim();
+  const pageCount =
+    typeof parsed === "object" &&
+    parsed !== null &&
+    "pageCount" in parsed &&
+    (typeof (parsed as { pageCount: unknown }).pageCount === "number" ||
+      (parsed as { pageCount: unknown }).pageCount === null)
+      ? ((parsed as { pageCount: number | null }).pageCount ?? null)
+      : null;
+
+  return {
+    text: text.replace(/\u0000/g, "").trim(),
+    pageCount,
+    durationMs,
+  };
 }

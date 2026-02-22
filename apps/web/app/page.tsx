@@ -30,6 +30,11 @@ export default async function Home() {
     documents: Array<{
       id: string;
       filePath: string;
+      extractedTextLength: number | null;
+      extractedPageCount: number | null;
+      extractionDurationMs: number | null;
+      ocrStatus: string;
+      ocrReason: string | null;
       extractionStatus: string;
       extractionError: string | null;
       extractedAt: Date | null;
@@ -59,6 +64,11 @@ export default async function Home() {
           select: {
             id: true,
             filePath: true,
+            extractedTextLength: true,
+            extractedPageCount: true,
+            extractionDurationMs: true,
+            ocrStatus: true,
+            ocrReason: true,
             extractionStatus: true,
             extractionError: true,
             extractedAt: true,
@@ -197,6 +207,18 @@ export default async function Home() {
                               {" • "}
                               <span className="text-zinc-500">created:</span>{" "}
                               {document.createdAt.toLocaleString()}
+                            </p>
+                            <p className="mt-1 text-zinc-300">
+                              <span className="text-zinc-500">diagnostics:</span>{" "}
+                              textLen={document.extractedTextLength ?? "null"}
+                              {" • "}
+                              pages={document.extractedPageCount ?? "null"}
+                              {" • "}
+                              extractMs={document.extractionDurationMs ?? "null"}
+                            </p>
+                            <p className="mt-1 text-zinc-300">
+                              <span className="text-zinc-500">ocr:</span> {document.ocrStatus}
+                              {document.ocrReason ? ` • ${document.ocrReason}` : ""}
                             </p>
                             <p className="mt-1 text-zinc-300">
                               <span className="text-zinc-500">extractedAt:</span>{" "}

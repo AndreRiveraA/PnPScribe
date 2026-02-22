@@ -26,7 +26,13 @@ async function main() {
   try {
     const result = await parser.getText();
     const text = typeof result?.text === "string" ? result.text : "";
-    process.stdout.write(JSON.stringify({ text }));
+    const pageCount =
+      typeof result?.total === "number"
+        ? result.total
+        : Array.isArray(result?.pages)
+          ? result.pages.length
+          : null;
+    process.stdout.write(JSON.stringify({ text, pageCount }));
   } finally {
     if (typeof parser.destroy === "function") {
       await parser.destroy().catch(() => undefined);

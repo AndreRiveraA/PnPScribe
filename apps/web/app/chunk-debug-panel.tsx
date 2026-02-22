@@ -13,6 +13,14 @@ type SystemDocumentsResponse = {
   documents?: Array<{
     id: string;
     filePath: string;
+    extractedTextLength: number | null;
+    extractedPageCount: number | null;
+    extractionDurationMs: number | null;
+    ocrStatus: string;
+    ocrReason: string | null;
+    ocrError: string | null;
+    ocrRequestedAt: string | null;
+    ocrCompletedAt: string | null;
     extractionStatus: string;
     extractionError: string | null;
     extractedAt: string | null;
@@ -30,6 +38,14 @@ type DocumentChunksResponse = {
     id: string;
     filePath: string;
     systemId: string;
+    extractedTextLength: number | null;
+    extractedPageCount: number | null;
+    extractionDurationMs: number | null;
+    ocrStatus: string;
+    ocrReason: string | null;
+    ocrError: string | null;
+    ocrRequestedAt: string | null;
+    ocrCompletedAt: string | null;
     extractionStatus: string;
     extractionError: string | null;
     extractedAt: string | null;
@@ -204,6 +220,22 @@ export function ChunkDebugPanel({ systems }: { systems: SystemOption[] }) {
             {" • "}
             <span className="text-zinc-500">chunks:</span> {selectedDocument._count.chunks}
           </p>
+          <p className="mt-1 text-zinc-300">
+            <span className="text-zinc-500">diagnostics:</span> textLen=
+            {selectedDocument.extractedTextLength ?? "null"}
+            {" • "}pages={selectedDocument.extractedPageCount ?? "null"}
+            {" • "}extractMs={selectedDocument.extractionDurationMs ?? "null"}
+          </p>
+          <p className="mt-1 text-zinc-300">
+            <span className="text-zinc-500">ocr:</span> {selectedDocument.ocrStatus}
+            {selectedDocument.ocrReason ? ` • ${selectedDocument.ocrReason}` : ""}
+            {selectedDocument.ocrRequestedAt ? ` • requested ${selectedDocument.ocrRequestedAt}` : ""}
+          </p>
+          {selectedDocument.ocrError ? (
+            <p className="mt-1 break-words text-amber-300">
+              <span className="text-zinc-500">ocrError:</span> {selectedDocument.ocrError}
+            </p>
+          ) : null}
           {selectedDocument.extractionError ? (
             <p className="mt-1 break-words text-amber-300">
               <span className="text-zinc-500">error:</span> {selectedDocument.extractionError}
