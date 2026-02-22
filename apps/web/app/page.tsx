@@ -1,4 +1,5 @@
 import { revalidatePath } from "next/cache";
+import { DocumentUploadPanel } from "@/app/document-upload-panel";
 import { prisma } from "@/lib/prisma";
 import { RulesAskPanel } from "@/app/rules-ask-panel";
 
@@ -131,6 +132,15 @@ export default async function Home() {
             </ul>
           )}
         </section>
+
+        {!dbError && systems.length > 0 ? (
+          <DocumentUploadPanel
+            systems={systems.map((system) => ({
+              id: system.id,
+              name: system.name,
+            }))}
+          />
+        ) : null}
 
         {!dbError && systems.length > 0 ? (
           <RulesAskPanel
