@@ -19,13 +19,27 @@ async function createSystem(formData: FormData) {
 }
 
 export default async function Home() {
-  let systems: Array<{ id: string; name: string; createdAt: Date }> = [];
+  let systems: Array<{
+    id: string;
+    name: string;
+    createdAt: Date;
+    _count: { documents: number };
+  }> = [];
   let dbError: string | null = null;
 
   try {
     systems = await prisma.system.findMany({
       orderBy: { createdAt: "desc" },
-      select: { id: true, name: true, createdAt: true },
+      select: {
+        id: true,
+        name: true,
+        createdAt: true,
+        _count: {
+          select: {
+            documents: true,
+          },
+        },
+      },
     });
   } catch {
     dbError = "Database not reachable. Start Docker services and run migrations.";
@@ -90,14 +104,27 @@ export default async function Home() {
               {systems.map((system) => (
                 <li
                   key={system.id}
-                  className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-950/70 px-3 py-2"
+                  className="rounded-lg border border-zinc-800 bg-zinc-950/70 px-3 py-3"
                 >
-                  <span className="text-sm font-medium text-zinc-100">
-                    {system.name}
-                  </span>
-                  <span className="text-xs text-zinc-400">
-                    {system.createdAt.toLocaleString()}
-                  </span>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-medium text-zinc-100">
+                      {system.name}
+                    </span>
+                    <span className="text-xs text-zinc-400">
+                      {system.createdAt.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between gap-3 text-xs">
+                    <span className="text-zinc-400">
+                      Documents: {system._count.documents}
+                    </span>
+                    <a
+                      href={`/api/systems/${system.id}/documents`}
+                      className="text-zinc-300 underline decoration-zinc-700 underline-offset-2 hover:text-zinc-100"
+                    >
+                      View documents JSON
+                    </a>
+                  </div>
                 </li>
               ))}
             </ul>
