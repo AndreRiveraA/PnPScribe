@@ -12,7 +12,7 @@ This checklist will be updated as we complete each step and get your approval.
 ## Step 0 — Setup + Migrations (First approval step)
 - [x] Add root setup script (if missing) to install deps in root/apps/workers.
 - [x] Run `npm run setup`.
-- [ ] Add Prisma migration for grouping/entities schema.
+- [x] Add Prisma migration for grouping/entities schema. (Completed in Step 2)
 - [x] Run `cd apps/web && npx prisma migrate dev`.
 
 ## Step 1 — Shared Ingestion Package (Chunking + Grouping)
@@ -22,10 +22,10 @@ This checklist will be updated as we complete each step and get your approval.
 - [x] Update `apps/web/next.config.ts` to transpile the package.
 
 ## Step 2 — Prisma Schema + Migration
-- [ ] Add `ChunkGroup`, `Entity`, `EntityRuleLink`, `EntityImage` models.
-- [ ] Add chunk `kind/labels/groupId`.
-- [ ] Add document entity progress fields.
-- [ ] Run migration and update Prisma client.
+- [x] Add `ChunkGroup`, `Entity`, `EntityRuleLink`, `EntityImage` models.
+- [x] Add chunk `kind/labels/groupId`.
+- [x] Add document entity progress fields.
+- [x] Run migration and update Prisma client.
 
 ## Step 3 — Web App: Enqueue Entity Extraction
 - [ ] After chunking, store groups and chunk metadata.

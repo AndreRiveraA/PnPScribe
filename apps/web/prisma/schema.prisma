@@ -11,6 +11,7 @@ model System {
   name      String
   createdAt DateTime @default(now())
   documents Document[]
+  entities  Entity[]
 }
 
 model Document {
@@ -30,12 +31,22 @@ model Document {
   ocrProgressTotalPages  Int?
   ocrProgressMessage     String?
   ocrProgressUpdatedAt   DateTime?
+  entityStatus          String    @default("idle")
+  entityError           String?
+  entityProgressMessage String?
+  entityProgressUpdatedAt DateTime?
+  entityExtractedCount  Int?
+  entityRuleLinkCount   Int?
+  entityImageCount      Int?
   extractionStatus String    @default("pending")
   extractionError  String?
   extractedAt      DateTime?
   systemId         String
   system           System    @relation(fields: [systemId], references: [id])
   chunks           Chunk[]
+  groups           ChunkGroup[]
+  entities         Entity[]
+  entityImages     EntityImage[]
   createdAt        DateTime  @default(now())
 }
 
@@ -45,8 +56,90 @@ model Chunk {
   chunkIndex Int
   pageNumber Int?
   chapterHint String?
+  kind       String?
+  labels     Json?
   embedding  Unsupported("vector")?
   documentId String
   document   Document  @relation(fields: [documentId], references: [id])
+  groupId    String?
+  group      ChunkGroup? @relation(fields: [groupId], references: [id])
+  ruleLinks  EntityRuleLink[]
   createdAt  DateTime  @default(now())
+}
+
+model ChunkGroup {
+  id              String   @id @default(cuid())
+  documentId      String
+  document        Document @relation(fields: [documentId], references: [id])
+  kind            String
+  groupIndex      Int
+  title           String?
+  chapterHint     String?
+  startChunkIndex Int
+  endChunkIndex   Int
+  startPage       Int?
+  endPage         Int?
+  chunks          Chunk[]
+  entities        Entity[]
+  createdAt       DateTime @default(now())
+
+  @@index([documentId, groupIndex])
+}
+
+model Entity {
+  id               String   @id @default(cuid())
+  systemId         String
+  system           System   @relation(fields: [systemId], references: [id])
+  documentId       String
+  document         Document @relation(fields: [documentId], references: [id])
+  groupId          String?
+  group            ChunkGroup? @relation(fields: [groupId], references: [id])
+  type             String
+  name             String
+  slug             String
+  sourcePageStart  Int?
+  sourcePageEnd    Int?
+  sourceChunkStart Int
+  sourceChunkEnd   Int
+  confidence       Float
+  extractionMethod String
+  coreData         Json
+  rawData          Json?
+  ruleLinks        EntityRuleLink[]
+  images           EntityImage[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([systemId, type, slug, sourceChunkStart, sourceChunkEnd])
+  @@index([systemId, type])
+  @@index([documentId])
+}
+
+model EntityRuleLink {
+  id         String @id @default(cuid())
+  entityId   String
+  entity     Entity @relation(fields: [entityId], references: [id])
+  chunkId    String
+  chunk      Chunk  @relation(fields: [chunkId], references: [id])
+  relation   String
+  confidence Float
+  rationale  String?
+  createdAt  DateTime @default(now())
+
+  @@unique([entityId, chunkId, relation])
+  @@index([entityId])
+}
+
+model EntityImage {
+  id         String   @id @default(cuid())
+  entityId   String
+  entity     Entity   @relation(fields: [entityId], references: [id])
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id])
+  pageNumber Int
+  filePath   String
+  kind       String
+  createdAt  DateTime @default(now())
+
+  @@index([entityId])
 }
