@@ -10,10 +10,10 @@ This checklist will be updated as we complete each step and get your approval.
 - [x] Future scope: add **NPC/Characters** entity type later.
 
 ## Step 0 — Setup + Migrations (First approval step)
-- [ ] Add root setup script (if missing) to install deps in root/apps/workers.
-- [ ] Run `npm run setup`.
+- [x] Add root setup script (if missing) to install deps in root/apps/workers.
+- [x] Run `npm run setup`.
 - [ ] Add Prisma migration for grouping/entities schema.
-- [ ] Run `cd apps/web && npx prisma migrate dev`.
+- [x] Run `cd apps/web && npx prisma migrate dev`.
 
 ## Step 1 — Shared Ingestion Package (Chunking + Grouping)
 - [ ] Create `packages/ingestion` with shared `chunking.ts`.
