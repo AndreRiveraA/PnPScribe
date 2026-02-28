@@ -6,7 +6,8 @@
     "dev": "concurrently -n web,ocr -c cyan,orange \"npm run dev:web\" \"npm run dev:ocr\"",
     "dev:web": "cd apps/web && npm run dev",
     "dev:ocr": "cd services/ocr-worker && npm run dev",
-    "dev:infra": "docker compose up -d"
+    "dev:infra": "docker compose up -d",
+    "setup": "bash scripts/setup.sh"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
