@@ -21,11 +21,6 @@ This checklist will be updated as we complete each step and get your approval.
 - [x] Update `apps/web` and workers to import from package.
 - [x] Update `apps/web/next.config.ts` to transpile the package.
 
-## Step 1.5 — PDF Metadata (Chapters/Outlines)
-- [ ] Extract PDF outlines/bookmarks when available.
-- [ ] Store chapter metadata (title + page range) for documents.
-- [ ] Use chapter metadata to improve grouping/labels.
-
 ## Step 2 — Prisma Schema + Migration
 - [x] Add `ChunkGroup`, `Entity`, `EntityRuleLink`, `EntityImage` models.
 - [x] Add chunk `kind/labels/groupId`.
@@ -38,17 +33,22 @@ This checklist will be updated as we complete each step and get your approval.
 - [x] Set document `entityStatus=queued` + progress fields.
 
 ## Step 4 — New `services/entity-worker`
-- [ ] Create worker service with BullMQ + Redis.
-- [ ] Process groups (monster/item), normalize entities via LLM.
-- [ ] Store entities + rule links.
-- [ ] Update progress fields throughout.
-- [ ] Mark success/failure.
+- [x] Create worker service with BullMQ + Redis.
+- [x] Process groups (monster/item), normalize entities via LLM.
+- [x] Store entities + rule links.
+- [x] Update progress fields throughout.
+- [x] Mark success/failure.
 
 ## Step 5 — Entity Image Extraction (Default ON)
 - [ ] Extract page renders using `pdfjs-dist`.
 - [ ] Store PNGs under `uploads/{systemId}/entities/{documentId}/{entityId}`.
 - [ ] Create `EntityImage` rows.
 - [ ] Guard with env flag (default true).
+
+## Step 5.5 — PDF Metadata (Chapters/Outlines)
+- [ ] Extract PDF outlines/bookmarks when available.
+- [ ] Store chapter metadata (title + page range) for documents.
+- [ ] Use chapter metadata to improve grouping/labels.
 
 ## Step 6 — APIs for Debug/UI
 - [ ] `GET /api/documents/[documentId]/groups`
