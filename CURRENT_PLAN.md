@@ -40,10 +40,10 @@ This checklist will be updated as we complete each step and get your approval.
 - [x] Mark success/failure.
 
 ## Step 5 — Entity Image Extraction (Default ON)
-- [ ] Extract page renders using `pdfjs-dist`.
-- [ ] Store PNGs under `uploads/{systemId}/entities/{documentId}/{entityId}`.
-- [ ] Create `EntityImage` rows.
-- [ ] Guard with env flag (default true).
+- [x] Extract page renders using `pdfjs-dist`.
+- [x] Store PNGs under `uploads/{systemId}/entities/{documentId}/{entityId}`.
+- [x] Create `EntityImage` rows.
+- [x] Guard with env flag (default true).
 
 ## Step 5.5 — PDF Metadata (Chapters/Outlines)
 - [ ] Extract PDF outlines/bookmarks when available.
@@ -59,6 +59,7 @@ This checklist will be updated as we complete each step and get your approval.
 ## Step 7 — UI Progress + Entity Visibility
 - [ ] Extend upload panel with group/entity counts + status.
 - [ ] Add simple entity list view for debugging.
+- [ ] Add UI testing checklist (upload → entities → rules → images).
 
 ## Later (Not Now)
 - [ ] NPC/Characters entity extraction + rules linking.

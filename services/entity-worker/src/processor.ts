@@ -12,9 +12,11 @@ import {
   setEntityProgress,
   upsertEntity,
   insertRuleLinks,
+  insertEntityImages,
 } from "./db.js";
 import type { ChunkGroupRecord } from "./db.js";
 import type { EntityExtractionJobPayload } from "./types.js";
+import { extractEntityImages } from "./pdf-images.js";
 
 const openai = new OpenAI({ apiKey: config.openAiApiKey });
 
@@ -182,7 +184,7 @@ export async function processEntityJob(
   const groups = await listCandidateGroups(payload.documentId);
   let extractedEntities = 0;
   let linkedRules = 0;
-  const linkedImages = 0;
+  let linkedImages = 0;
 
   for (let index = 0; index < groups.length; index += 1) {
     const group = groups[index]!;
@@ -255,6 +257,34 @@ export async function processEntityJob(
     });
 
     linkedRules += inserted;
+
+    if (config.imageExtractionEnabled) {
+      try {
+        const images = await extractEntityImages({
+          systemId: payload.systemId,
+          documentId: payload.documentId,
+          entityId,
+          absolutePdfPath: payload.absolutePdfPath,
+          pageStart: group.startPage,
+          pageEnd: group.endPage,
+          maxPages: Math.max(1, config.imageMaxPages),
+          targetWidth: Math.max(200, config.imageTargetWidth),
+        });
+
+        const imageInserted = await insertEntityImages({
+          entityId,
+          documentId: payload.documentId,
+          images,
+        });
+
+        linkedImages += imageInserted;
+      } catch (error) {
+        console.error("[entity-worker] image extraction failed", {
+          entityId,
+          error: error instanceof Error ? error.message : "unknown",
+        });
+      }
+    }
 
     if (params?.onProgress) {
       await params.onProgress(

@@ -263,3 +263,40 @@ export async function insertRuleLinks(params: {
 
   return res.rowCount ?? 0;
 }
+
+export async function insertEntityImages(params: {
+  entityId: string;
+  documentId: string;
+  images: Array<{ pageNumber: number; filePath: string; kind: string }>;
+}) {
+  if (params.images.length === 0) {
+    return 0;
+  }
+
+  const values: Array<string> = [];
+  const payload: Array<unknown> = [];
+  let idx = 1;
+
+  for (const image of params.images) {
+    values.push(`($${idx++}, $${idx++}, $${idx++}, $${idx++}, $${idx++}, $${idx++}, NOW())`);
+    payload.push(
+      randomUUID(),
+      params.entityId,
+      params.documentId,
+      image.pageNumber,
+      image.filePath,
+      image.kind,
+    );
+  }
+
+  const res = await pool.query(
+    `
+    INSERT INTO "EntityImage" ("id", "entityId", "documentId", "pageNumber", "filePath", "kind", "createdAt")
+    VALUES ${values.join(", ")}
+    ON CONFLICT DO NOTHING
+    `,
+    payload,
+  );
+
+  return res.rowCount ?? 0;
+}

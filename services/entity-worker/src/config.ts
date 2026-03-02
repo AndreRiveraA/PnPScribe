@@ -11,6 +11,9 @@ export const config = {
   confidenceThreshold: Number.isFinite(parsedConfidence)
     ? Math.max(0, Math.min(1, parsedConfidence))
     : 0.5,
+  imageExtractionEnabled: process.env.ENTITY_IMAGE_EXTRACTION_ENABLED !== "false",
+  imageMaxPages: Number(process.env.ENTITY_IMAGE_MAX_PAGES ?? "3"),
+  imageTargetWidth: Number(process.env.ENTITY_IMAGE_TARGET_WIDTH ?? "1400"),
   projectRoot:
     process.env.PNPSCRIBE_ROOT ??
     fileURLToPath(new URL("../../..", import.meta.url)),

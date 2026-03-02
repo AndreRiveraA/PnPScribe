@@ -9,7 +9,7 @@ const globalForPrisma = globalThis as unknown as {
 
 const connectionString = process.env.DATABASE_URL;
 
-if (!connectionString) {
+if (!(connectionString ?? "")) {
   throw new Error("Missing DATABASE_URL in environment.");
 }
 

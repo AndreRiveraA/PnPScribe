@@ -144,7 +144,7 @@ export async function processOcrJob(
     });
 
     const chunkStartedAt = Date.now();
-    const chunks = chunkText(text).map((chunk) => ({
+    const chunks = chunkText(text).map((chunk: { content: string; index: number; pageNumber: number | null; chapterHint: string | null }) => ({
       content: chunk.content,
       chunkIndex: chunk.index,
       pageNumber: chunk.pageNumber,

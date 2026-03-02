@@ -9,9 +9,11 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@napi-rs/canvas": "^0.1.80",
     "bullmq": "^5.58.5",
     "dotenv": "^16.6.1",
     "openai": "^6.22.0",
+    "pdfjs-dist": "^4.10.38",
     "pg": "^8.16.3"
   },
   "devDependencies": {
