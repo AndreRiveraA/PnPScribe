@@ -57,8 +57,8 @@ This checklist will be updated as we complete each step and get your approval.
 - [x] `GET /api/entities/[entityId]/rules`
 
 ## Step 7 — UI Progress + Entity Visibility
-- [ ] Extend upload panel with group/entity counts + status.
-- [ ] Add simple entity list view for debugging.
+- [x] Extend upload panel with group/entity counts + status.
+- [x] Add simple entity list view for debugging.
 - [ ] Add UI testing checklist (upload → entities → rules → images).
 
 ## Later (Not Now)

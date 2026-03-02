@@ -22,7 +22,7 @@ async function extractOutlineFromPdf(absolutePdfPath: string) {
   }
 
   const buffer = await fs.readFile(absolutePdfPath);
-  const loadingTask = pdfjs.getDocument({ data: buffer });
+  const loadingTask = pdfjs.getDocument({ data: new Uint8Array(buffer) });
   const pdf = await loadingTask.promise;
 
   try {

@@ -26,6 +26,13 @@ type SystemDocumentsResponse = {
     ocrProgressTotalPages: number | null;
     ocrProgressMessage: string | null;
     ocrProgressUpdatedAt: string | null;
+    entityStatus: string;
+    entityError: string | null;
+    entityProgressMessage: string | null;
+    entityProgressUpdatedAt: string | null;
+    entityExtractedCount: number | null;
+    entityRuleLinkCount: number | null;
+    entityImageCount: number | null;
     extractionStatus: string;
     extractionError: string | null;
     extractedAt: string | null;
@@ -56,6 +63,13 @@ type DocumentChunksResponse = {
     ocrProgressTotalPages: number | null;
     ocrProgressMessage: string | null;
     ocrProgressUpdatedAt: string | null;
+    entityStatus: string;
+    entityError: string | null;
+    entityProgressMessage: string | null;
+    entityProgressUpdatedAt: string | null;
+    entityExtractedCount: number | null;
+    entityRuleLinkCount: number | null;
+    entityImageCount: number | null;
     extractionStatus: string;
     extractionError: string | null;
     extractedAt: string | null;
@@ -89,6 +103,16 @@ export function ChunkDebugPanel({ systems }: { systems: SystemOption[] }) {
     payload: DocumentChunksResponse | null;
   }>({ loading: false, error: null, payload: null });
   const [ocrRequestState, setOcrRequestState] = useState<{
+    loading: boolean;
+    error: string | null;
+    message: string | null;
+  }>({ loading: false, error: null, message: null });
+  const [entityRequestState, setEntityRequestState] = useState<{
+    loading: boolean;
+    error: string | null;
+    message: string | null;
+  }>({ loading: false, error: null, message: null });
+  const [resetState, setResetState] = useState<{
     loading: boolean;
     error: string | null;
     message: string | null;
@@ -213,6 +237,76 @@ export function ChunkDebugPanel({ systems }: { systems: SystemOption[] }) {
     }
   }
 
+  async function requestEntityExtraction() {
+    if (!documentId) {
+      return;
+    }
+
+    setEntityRequestState({ loading: true, error: null, message: null });
+
+    try {
+      const res = await fetch(`/api/documents/${documentId}/entities/reprocess`, {
+        method: "POST",
+      });
+      const data = (await res.json()) as { ok: boolean; error?: string };
+
+      if (!data.ok) {
+        setEntityRequestState({
+          loading: false,
+          error: data.error ?? "Failed to queue entity extraction.",
+          message: null,
+        });
+        return;
+      }
+
+      setEntityRequestState({
+        loading: false,
+        error: null,
+        message: "Entity extraction queued.",
+      });
+
+      await loadChunks();
+    } catch {
+      setEntityRequestState({
+        loading: false,
+        error: "Failed to queue entity extraction.",
+        message: null,
+      });
+    }
+  }
+
+  async function resetQueues() {
+    setResetState({ loading: true, error: null, message: null });
+
+    try {
+      const res = await fetch("/api/debug/reset", { method: "POST" });
+      const data = (await res.json()) as { ok: boolean; error?: string };
+
+      if (!data.ok) {
+        setResetState({
+          loading: false,
+          error: data.error ?? "Failed to reset queues.",
+          message: null,
+        });
+        return;
+      }
+
+      setResetState({
+        loading: false,
+        error: null,
+        message: "Queues cleared and statuses reset.",
+      });
+
+      await loadChunks();
+    } catch {
+      setResetState({
+        loading: false,
+        error: "Failed to reset queues.",
+        message: null,
+      });
+    }
+  }
+
   const selectedDocument = useMemo(
     () => documentsState.documents.find((doc) => doc.id === documentId) ?? null,
     [documentsState.documents, documentId],
@@ -279,6 +373,24 @@ export function ChunkDebugPanel({ systems }: { systems: SystemOption[] }) {
           {ocrRequestState.loading ? "Queueing OCR..." : "Request OCR"}
         </button>
 
+        <button
+          type="button"
+          onClick={() => void requestEntityExtraction()}
+          disabled={!documentId || entityRequestState.loading}
+          className="h-10 rounded-lg bg-cyan-300 px-4 text-sm font-medium text-zinc-950 hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {entityRequestState.loading ? "Queueing entities..." : "Re-run entities"}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => void resetQueues()}
+          disabled={resetState.loading}
+          className="h-10 rounded-lg bg-zinc-700 px-4 text-sm font-medium text-zinc-100 hover:bg-zinc-600 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {resetState.loading ? "Resetting..." : "Reset queues"}
+        </button>
+
         <select
           value={ocrMode}
           onChange={(event) => setOcrMode(event.target.value === "supplement" ? "supplement" : "replace")}
@@ -301,10 +413,15 @@ export function ChunkDebugPanel({ systems }: { systems: SystemOption[] }) {
         {documentsState.error ? <span className="text-xs text-rose-300">{documentsState.error}</span> : null}
         {ocrRequestState.error ? <span className="text-xs text-rose-300">{ocrRequestState.error}</span> : null}
         {ocrRequestState.message ? <span className="text-xs text-emerald-300">{ocrRequestState.message}</span> : null}
+        {entityRequestState.error ? <span className="text-xs text-rose-300">{entityRequestState.error}</span> : null}
+        {entityRequestState.message ? <span className="text-xs text-emerald-300">{entityRequestState.message}</span> : null}
+        {resetState.error ? <span className="text-xs text-rose-300">{resetState.error}</span> : null}
+        {resetState.message ? <span className="text-xs text-emerald-300">{resetState.message}</span> : null}
       </div>
 
       {selectedDocument ? (
         <div className="mt-4 rounded-lg border border-zinc-800 bg-zinc-950/60 p-3 text-xs">
+          <div className="max-h-48 overflow-y-auto pr-2">
           <p className="text-zinc-300">
             <span className="text-zinc-500">docId:</span> <code>{selectedDocument.id}</code>
           </p>
@@ -335,6 +452,25 @@ export function ChunkDebugPanel({ systems }: { systems: SystemOption[] }) {
             {selectedDocument.ocrProgressMessage ? ` • ${selectedDocument.ocrProgressMessage}` : ""}
             {selectedDocument.ocrProgressUpdatedAt ? ` • updated ${selectedDocument.ocrProgressUpdatedAt}` : ""}
           </p>
+          <p className="mt-1 text-zinc-300">
+            <span className="text-zinc-500">entity status:</span>{" "}
+            {selectedDocument.entityStatus}
+            {selectedDocument.entityProgressMessage ? ` • ${selectedDocument.entityProgressMessage}` : ""}
+            {selectedDocument.entityProgressUpdatedAt
+              ? ` • updated ${selectedDocument.entityProgressUpdatedAt}`
+              : ""}
+          </p>
+          <p className="mt-1 text-zinc-300">
+            <span className="text-zinc-500">entity counts:</span>{" "}
+            extracted={selectedDocument.entityExtractedCount ?? 0}
+            {" • "}rules={selectedDocument.entityRuleLinkCount ?? 0}
+            {" • "}images={selectedDocument.entityImageCount ?? 0}
+          </p>
+          {selectedDocument.entityError ? (
+            <p className="mt-1 break-words text-amber-300">
+              <span className="text-zinc-500">entity error:</span> {selectedDocument.entityError}
+            </p>
+          ) : null}
           {selectedDocument.ocrError ? (
             <p className="mt-1 break-words text-amber-300">
               <span className="text-zinc-500">ocrError:</span> {selectedDocument.ocrError}
@@ -345,6 +481,7 @@ export function ChunkDebugPanel({ systems }: { systems: SystemOption[] }) {
               <span className="text-zinc-500">error:</span> {selectedDocument.extractionError}
             </p>
           ) : null}
+          </div>
           <p className="mt-2">
             <a
               href={`/api/documents/${selectedDocument.id}/chunks`}
@@ -373,9 +510,10 @@ export function ChunkDebugPanel({ systems }: { systems: SystemOption[] }) {
             {chunksState.payload.chunks.filter((chunk) => chunk.hasEmbedding).length}
           </div>
 
-          <ul className="space-y-2">
-            {chunksState.payload.chunks.map((chunk) => (
-              <li key={chunk.id} className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
+          <div className="max-h-[520px] overflow-y-auto pr-2">
+            <ul className="space-y-2">
+              {chunksState.payload.chunks.map((chunk) => (
+                <li key={chunk.id} className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
                 <p className="text-xs text-zinc-400">
                   chunk {chunk.chunkIndex} • id <code>{chunk.id}</code>
                   {chunk.pageNumber !== null ? ` • page ${chunk.pageNumber}` : ""}
@@ -386,12 +524,13 @@ export function ChunkDebugPanel({ systems }: { systems: SystemOption[] }) {
                     <span className="text-zinc-500">chapter:</span> {chunk.chapterHint}
                   </p>
                 ) : null}
-                <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded border border-zinc-800 bg-zinc-900/70 p-2 text-xs text-zinc-200">
+                <pre className="mt-2 max-h-40 overflow-y-auto overflow-x-auto whitespace-pre-wrap rounded border border-zinc-800 bg-zinc-900/70 p-2 text-xs text-zinc-200">
                   {chunk.content}
                 </pre>
-              </li>
-            ))}
-          </ul>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       ) : null}
     </section>

@@ -17,10 +17,14 @@ type UploadResult = {
   };
   processing?: {
     chunkCount?: number;
+    groupCount?: number;
+    chapterCount?: number;
     embeddedCount?: number;
     embeddingError?: string | null;
   };
 };
+
+type UploadStep = "idle" | "uploading" | "extracting" | "chunking" | "embedding" | "done" | "error";
 
 export function DocumentUploadPanel({ systems }: { systems: SystemOption[] }) {
   const router = useRouter();
@@ -28,6 +32,7 @@ export function DocumentUploadPanel({ systems }: { systems: SystemOption[] }) {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState<UploadResult | null>(null);
+  const [step, setStep] = useState<UploadStep>("idle");
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,6 +43,7 @@ export function DocumentUploadPanel({ systems }: { systems: SystemOption[] }) {
 
     setUploading(true);
     setResult(null);
+    setStep("uploading");
 
     try {
       const formData = new FormData();
@@ -49,15 +55,22 @@ export function DocumentUploadPanel({ systems }: { systems: SystemOption[] }) {
         body: formData,
       });
 
+      setStep("extracting");
       const data = (await res.json()) as UploadResult;
       setResult(data);
 
       if (data.ok) {
+        setStep("chunking");
         setFile(null);
         router.refresh();
+        setStep("embedding");
+        setStep("done");
+      } else {
+        setStep("error");
       }
     } catch {
       setResult({ ok: false, error: "Upload request failed." });
+      setStep("error");
     } finally {
       setUploading(false);
     }
@@ -102,6 +115,16 @@ export function DocumentUploadPanel({ systems }: { systems: SystemOption[] }) {
 
       {result ? (
         <div className="mt-4 space-y-2">
+          <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 px-3 py-2 text-xs text-zinc-300">
+            <span className="text-zinc-500">status:</span>{" "}
+            {step === "uploading" ? "Uploading file" : null}
+            {step === "extracting" ? "Extracting text" : null}
+            {step === "chunking" ? "Chunking + grouping" : null}
+            {step === "embedding" ? "Embedding chunks" : null}
+            {step === "done" ? "Completed" : null}
+            {step === "error" ? "Failed" : null}
+            {step === "idle" ? "Idle" : null}
+          </div>
           {result.ok ? (
             <div className="rounded-lg border border-emerald-800 bg-emerald-950/20 px-3 py-2 text-sm text-emerald-200">
               Upload completed.
@@ -110,6 +133,12 @@ export function DocumentUploadPanel({ systems }: { systems: SystemOption[] }) {
                 : ""}
               {typeof result.processing?.chunkCount === "number"
                 ? ` Chunks: ${result.processing.chunkCount}.`
+                : ""}
+              {typeof result.processing?.groupCount === "number"
+                ? ` Groups: ${result.processing.groupCount}.`
+                : ""}
+              {typeof result.processing?.chapterCount === "number"
+                ? ` Chapters: ${result.processing.chapterCount}.`
                 : ""}
               {typeof result.processing?.embeddedCount === "number"
                 ? ` Embedded: ${result.processing.embeddedCount}.`
